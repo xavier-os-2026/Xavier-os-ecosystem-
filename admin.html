@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | Xavier OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --void-black: #020204; --admin-red: #ff0040; }
+        body { font-family: 'Rajdhani', sans-serif; background: var(--void-black); color: #e0e0e0; }
+        .quantum-panel { background: rgba(10, 14, 39, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .admin-panel { background: rgba(39, 10, 10, 0.8); border: 1px solid rgba(255, 0, 64, 0.3); }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .admin-glow { box-shadow: 0 0 20px rgba(255, 0, 64, 0.3); }
+        .nav-item { transition: all 0.3s; border-left: 3px solid transparent; }
+        .nav-item:hover, .nav-item.active { background: rgba(255, 0, 64, 0.1); border-left-color: #ff0040; }
+        .metric-card { background: linear-gradient(135deg, rgba(255,0,64,0.1), rgba(176,38,255,0.1)); }
+        .status-indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; box-shadow: 0 0 10px currentColor; } 50% { opacity: 0.5; } }
+        .data-row:hover { background: rgba(255,255,255,0.05); }
+        .terminal { font-family: 'Courier New', monospace; background: #000; border: 1px solid #333; }
+    </style>
+</head>
+<body>
+    <!-- SECURITY CHECK - Blocks non-admin users immediately -->
+    <script>
+        (function() {
+            const session = JSON.parse(localStorage.getItem('xavier_session') || '{}');
+            if (session.accessLevel !== 'admin') {
+                window.location.href = 'index.html?error=unauthorized';
+            }
+        })();
+    </script>
+
+    <div class="flex h-screen overflow-hidden">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-black/50 border-r border-red-900/30 flex flex-col">
+            <div class="p-6 border-b border-red-900/30">
+                <h1 class="font-orbitron text-xl font-bold text-red-400 flex items-center gap-2">
+                    <span class="text-2xl">⚡</span> ADMIN
+                </h1>
+                <div class="text-xs text-gray-500 mt-1">System Control Panel</div>
+            </div>
+            
+            <nav class="flex-1 py-4 space-y-1">
+                <a href="#dashboard" onclick="showSection('dashboard')" class="nav-item active flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white">
+                    <span>📊</span> Dashboard
+                </a>
+                <a href="#users" onclick="showSection('users')" class="nav-item flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white">
+                    <span>👥</span> User Management
+                </a>
+                <a href="#models" onclick="showSection('models')" class="nav-item flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white">
+                    <span>👤</span> Model Registry
+                </a>
+                <a href="#content" onclick="showSection('content')" class="nav-item flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white">
+                    <span>🎨</span> Content Library
+                </a>
+                <a href="#system" onclick="showSection('system')" class="nav-item flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white">
+                    <span>⚙️</span> System Config
+                </a>
+                <a href="#logs" onclick="showSection('logs')" class="nav-item flex items-center gap-3 px-6 py-3 text-gray-300 hover:text-white">
+                    <span>📜</span> Access Logs
+                </a>
+            </nav>
+            
+            <div class="p-4 border-t border-red-900/30 space-y-2">
+                <div class="text-xs text-gray-500">Admin User</div>
+                <div class="font-bold text-red-400" id="admin-name">Architect</div>
+                <button onclick="logout()" class="w-full bg-red-900/30 hover:bg-red-900/50 text-red-400 py-2 rounded text-sm transition border border-red-500/30">Logout</button>
+                <button onclick="window.location.href='index.html'" class="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 py-2 rounded text-sm transition">← Back to Hub</button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 overflow-y-auto">
+            <!-- Top Bar -->
+            <header class="bg-black/30 border-b border-gray-800 px-8 py-4 flex justify-between items-center sticky top-0 z-10 backdrop-blur">
+                <div class="flex items-center gap-4">
+                    <span class="status-indicator bg-green-400" style="color: #00ff41;"></span>
+                    <span class="text-sm text-gray-400">System Online</span>
+                    <span class="text-gray-600">|</span>
+                    <span class="text-sm text-gray-400">Version: <span class="text-white">Xavier OS v2.0.1</span></span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <button onclick="broadcastMessage()" class="bg-blue-600/30 border border-blue-500 text-blue-400 px-4 py-2 rounded text-sm hover:bg-blue-600/50 transition">📢 Broadcast</button>
+                    <button onclick="emergencyShutdown()" class="bg-red-600/30 border border-red-500 text-red-400 px-4 py-2 rounded text-sm hover:bg-red-600/50 transition">🚨 Emergency Stop</button>
+                </div>
+            </header>
+
+            <div class="p-8 space-y-6">
+                <!-- Dashboard Section -->
+                <div id="section-dashboard" class="section">
+                    <h2 class="font-orbitron text-2xl font-bold text-white mb-6">System Overview</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                        <div class="metric-card quantum-panel rounded-xl p-6 admin-glow">
+                            <div class="text-gray-400 text-sm mb-1">Total Users</div>
+                            <div class="text-3xl font-bold text-white" id="total-users">1</div>
+                            <div class="text-xs text-green-400 mt-2">↑ Admin Access</div>
+                        </div>
+                        <div class="metric-card quantum-panel rounded-xl p-6">
+                            <div class="text-gray-400 text-sm mb-1">Active Models</div>
+                            <div class="text-3xl font-bold text-cyan-400" id="total-models">0</div>
+                            <div class="text-xs text-gray-500 mt-2">In Talent Nexus</div>
+                        </div>
+                        <div class="metric-card quantum-panel rounded-xl p-6">
+                            <div class="text-gray-400 text-sm mb-1">Files Stored</div>
+                            <div class="text-3xl font-bold text-purple-400" id="total-files">0</div>
+                            <div class="text-xs text-gray-500 mt-2">In Quantum Vault</div>
+                        </div>
+                        <div class="metric-card quantum-panel rounded-xl p-6">
+                            <div class="text-gray-400 text-sm mb-1">System Health</div>
+                            <div class="text-3xl font-bold text-green-400">98%</div>
+                            <div class="text-xs text-green-400 mt-2">Operational</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="quantum-panel rounded-xl p-6">
+                            <h3 class="font-orbitron text-lg font-bold text-white mb-4">Activity Chart</h3>
+                            <canvas id="activityChart" height="200"></canvas>
+                        </div>
+                        <div class="quantum-panel rounded-xl p-6">
+                            <h3 class="font-orbitron text-lg font-bold text-white mb-4">Module Usage</h3>
+                            <div class="space-y-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-400">Neural Studio</span>
+                                    <div class="w-32 bg-gray-800 rounded-full h-2"><div class="bg-yellow-500 h-2 rounded-full" style="width: 75%"></div></div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-400">Talent Nexus</span>
+                                    <div class="w-32 bg-gray-800 rounded-full h-2"><div class="bg-violet-500 h-2 rounded-full" style="width: 60%"></div></div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-400">Quantum Vault</span>
+                                    <div class="w-32 bg-gray-800 rounded-full h-2"><div class="bg-blue-500 h-2 rounded-full" style="width: 45%"></div></div>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-400">Vibe Builder</span>
+                                    <div class="w-32 bg-gray-800 rounded-full h-2"><div class="bg-pink-500 h-2 rounded-full" style="width: 80%"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Section -->
+                <div id="section-users" class="section hidden">
+                    <h2 class="font-orbitron text-2xl font-bold text-white mb-6">User Management</h2>
+                    
+                    <div class="quantum-panel rounded-xl p-6 mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-white">Access Control</h3>
+                            <button onclick="grantAdminAccess()" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-sm font-bold transition">+ Grant Admin Access</button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="text-xs text-gray-500 border-b border-gray-800">
+                                    <tr>
+                                        <th class="pb-3">ID</th>
+                                        <th class="pb-3">Access Level</th>
+                                        <th class="pb-3">Modules</th>
+                                        <th class="pb-3">Storage Used</th>
+                                        <th class="pb-3">Last Active</th>
+                                        <th class="pb-3">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-table" class="text-sm">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Models Section -->
+                <div id="section-models" class="section hidden">
+                    <h2 class="font-orbitron text-2xl font-bold text-white mb-6">Model Registry</h2>
+                    <div id="admin-model-grid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Content Section -->
+                <div id="section-content" class="section hidden">
+                    <h2 class="font-orbitron text-2xl font-bold text-white mb-6">Global Content Library</h2>
+                    <div class="quantum-panel rounded-xl p-6">
+                        <div class="flex justify-between mb-4">
+                            <div class="flex gap-4">
+                                <button onclick="filterContent('all')" class="text-sm text-cyan-400 hover:text-white transition">All</button>
+                                <button onclick="filterContent('image')" class="text-sm text-gray-400 hover:text-white transition">Images</button>
+                                <button onclick="filterContent('video')" class="text-sm text-gray-400 hover:text-white transition">Videos</button>
+                            </div>
+                            <button onclick="clearAllContent()" class="text-sm text-red-400 hover:text-red-300 transition">Clear All Content</button>
+                        </div>
+                        <div id="admin-gallery" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 max-h-96 overflow-y-auto">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- System Section -->
+                <div id="section-system" class="section hidden">
+                    <h2 class="font-orbitron text-2xl font-bold text-white mb-6">System Configuration</h2>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="quantum-panel rounded-xl p-6 border border-yellow-500/20">
+                            <h3 class="font-orbitron text-lg font-bold text-yellow-400 mb-4">Global Settings</h3>
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-400">Maintenance Mode</span>
+                                    <button onclick="toggleMaintenance()" id="maint-btn" class="bg-gray-800 px-4 py-1 rounded text-sm">Disabled</button>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-400">New Registrations</span>
+                                    <button onclick="toggleRegistrations()" id="reg-btn" class="bg-green-600/30 text-green-400 px-4 py-1 rounded text-sm border border-green-500">Open</button>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <span class="text-gray-400">Default Access Level</span>
+                                    <select class="bg-black/50 border border-gray-700 rounded px-3 py-1 text-sm" onchange="updateDefaultAccess(this.value)">
+                                        <option value="free">Free</option>
+                                        <option value="creator">Creator</option>
+                                        <option value="architect" selected>Architect</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="quantum-panel rounded-xl p-6 border border-red-500/20">
+                            <h3 class="font-orbitron text-lg font-bold text-red-400 mb-4">Danger Zone</h3>
+                            <div class="space-y-3">
+                                <button onclick="resetAllData()" class="w-full bg-red-600/30 border border-red-500 text-red-400 py-3 rounded hover:bg-red-600/50 transition">🗑️ Reset All User Data</button>
+                                <button onclick="clearLocalStorage()" class="w-full bg-red-600/30 border border-red-500 text-red-400 py-3 rounded hover:bg-red-600/50 transition">💥 Clear Local Storage</button>
+                                <button onclick="exportSystemData()" class="w-full bg-blue-600/30 border border-blue-500 text-blue-400 py-3 rounded hover:bg-blue-600/50 transition">💾 Export System Backup</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logs Section -->
+                <div id="section-logs" class="section hidden">
+                    <h2 class="font-orbitron text-2xl font-bold text-white mb-6">Access Logs</h2>
+                    <div class="terminal rounded-xl p-4 h-96 overflow-y-auto text-xs font-mono space-y-1" id="system-logs">
+                        <div class="text-green-400">[SYSTEM] Admin dashboard initialized...</div>
+                        <div class="text-gray-500">[AUTH] Admin access granted via architect_x_2025</div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="refreshLogs()" class="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded text-sm transition">Refresh</button>
+                        <button onclick="clearLogs()" class="bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded text-sm transition">Clear</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Initialize Admin Dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStats();
+            initChart();
+            loadUsers();
+            loadModels();
+            loadContent();
+            addLog('Admin dashboard accessed', 'success');
+        });
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+            document.getElementById('section-' + sectionId).classList.remove('hidden');
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            event.target.closest('.nav-item').classList.add('active');
+        }
+
+        function loadStats() {
+            const models = JSON.parse(localStorage.getItem('xavier_models') || '[]');
+            const files = JSON.parse(localStorage.getItem('xavier_files') || '[]');
+            const session = JSON.parse(localStorage.getItem('xavier_session') || '{}');
+            
+            document.getElementById('total-models').textContent = models.length;
+            document.getElementById('total-files').textContent = files.length;
+            if (session.accessLevel) {
+                document.getElementById('admin-name').textContent = session.accessLevel.toUpperCase();
+            }
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('activityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'System Activity',
+                        data: [65, 59, 80, 81, 56, 95, 100],
+                        borderColor: '#ff0040',
+                        backgroundColor: 'rgba(255, 0, 64, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#666' } },
+                        x: { grid: { display: false }, ticks: { color: '#666' } }
+                    }
+                }
+            });
+        }
+
+        function loadUsers() {
+            const tbody = document.getElementById('users-table');
+            const session = JSON.parse(localStorage.getItem('xavier_session') || '{}');
+            
+            tbody.innerHTML = `
+                <tr class="data-row border-b border-gray-800">
+                    <td class="py-3 font-mono text-xs">ADMIN-001</td>
+                    <td class="py-3"><span class="bg-red-600/20 text-red-400 px-2 py-1 rounded text-xs border border-red-500">${session.accessLevel || 'admin'}</span></td>
+                    <td class="py-3 text-gray-400">All Modules</td>
+                    <td class="py-3 text-gray-400">${session.storage || 0} MB</td>
+                    <td class="py-3 text-gray-400">Now</td>
+                    <td class="py-3">
+                        <button onclick="revokeAccess('admin')" class="text-xs bg-red-600/30 text-red-400 px-3 py-1 rounded border border-red-500 hover:bg-red-600/50">Revoke</button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function loadModels() {
+            const models = JSON.parse(localStorage.getItem('xavier_models') || '[]');
+            const grid = document.getElementById('admin-model-grid');
+            
+            if (models.length === 0) {
+                grid.innerHTML = '<div class="text-gray-500 col-span-3 text-center py-8">No models in registry</div>';
+                return;
+            }
+            
+            grid.innerHTML = models.map(m => `
+                <div class="quantum-panel rounded-lg p-4 border border-violet-500/20">
+                    <div class="flex justify-between items-start mb-2">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center text-xl">👤</div>
+                        <button onclick="deleteModel('${m.id}')" class="text-red-400 hover:text-red-300 text-xs">✕</button>
+                    </div>
+                    <div class="font-bold text-white">${m.name}</div>
+                    <div class="text-xs text-violet-400 mb-2">${m.role} • Used ${m.usageCount || 0} times</div>
+                    <div class="text-xs text-gray-500 font-mono">${m.id}</div>
+                </div>
+            `).join('');
+        }
+
+        function loadContent() {
+            const items = JSON.parse(localStorage.getItem('xavier_creations') || '[]');
+            const grid = document.getElementById('admin-gallery');
+            
+            if (items.length === 0) {
+                grid.innerHTML = '<div class="text-gray-500 col-span-full text-center py-8">No content generated yet</div>';
+                return;
+            }
+            
+            grid.innerHTML = items.map((item, idx) => `
+                <div class="aspect-square rounded-lg relative overflow-hidden bg-gray-800 group">
+                    <img src="${item.data}" class="w-full h-full object-cover">
+                    <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                        <button onclick="downloadContent(${idx})" class="w-8 h-8 bg-cyan-600 rounded-full text-white flex items-center justify-center text-xs">💾</button>
+                        <button onclick="deleteContent(${idx})" class="w-8 h-8 bg-red-600 rounded-full text-white flex items-center justify-center text-xs">🗑️</button>
+                    </div>
+                    <div class="absolute bottom-0 left-0 right-0 bg-black/70 p-1 text-[10px] text-gray-400">
+                        ${item.modelName || 'No Model'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addLog(message, type = 'info') {
+            const logs = document.getElementById('system-logs');
+            const time = new Date().toLocaleTimeString();
+            const colors = { info: 'text-gray-400', success: 'text-green-400', warning: 'text-yellow-400', error: 'text-red-400' };
+            logs.innerHTML += `<div class="${colors[type]}">[${time}] ${message}</div>`;
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        // Admin Actions
+        function grantAdminAccess() {
+            const code = prompt('Enter new admin access code:');
+            if (code) {
+                localStorage.setItem('xavier_admin_code', code);
+                addLog(`New admin code set: ${code}`, 'success');
+                alert('Admin access code updated!');
+            }
+        }
+
+        function revokeAccess(userId) {
+            if (confirm('Revoke admin access?')) {
+                addLog(`Access revoked for ${userId}`, 'warning');
+                alert('Access revoked (simulation)');
+            }
+        }
+
+        function deleteModel(modelId) {
+            if (confirm('Delete this model permanently?')) {
+                let models = JSON.parse(localStorage.getItem('xavier_models') || '[]');
+                models = models.filter(m => m.id !== modelId);
+                localStorage.setItem('xavier_models', JSON.stringify(models));
+                loadModels();
+                loadStats();
+                addLog(`Model ${modelId} deleted`, 'warning');
+            }
+        }
+
+        function deleteContent(idx) {
+            let items = JSON.parse(localStorage.getItem('xavier_creations') || '[]');
+            items.splice(idx, 1);
+            localStorage.setItem('xavier_creations', JSON.stringify(items));
+            loadContent();
+        }
+
+        function downloadContent(idx) {
+            const items = JSON.parse(localStorage.getItem('xavier_creations') || '[]');
+            const a = document.createElement('a');
+            a.href = items[idx].data;
+            a.download = `content-${idx}.png`;
+            a.click();
+        }
+
+        function clearAllContent() {
+            if (confirm('Delete ALL content from library?')) {
+                localStorage.removeItem('xavier_creations');
+                loadContent();
+                addLog('All content cleared', 'warning');
+            }
+        }
+
+        function toggleMaintenance() {
+            const btn = document.getElementById('maint-btn');
+            const current = btn.textContent;
+            btn.textContent = current === 'Disabled' ? 'Enabled' : 'Disabled';
+            btn.className = current === 'Disabled' ? 'bg-yellow-600/30 text-yellow-400 px-4 py-1 rounded text-sm border border-yellow-500' : 'bg-gray-800 px-4 py-1 rounded text-sm';
+            addLog(`Maintenance mode ${current === 'Disabled' ? 'enabled' : 'disabled'}`, 'warning');
+        }
+
+        function toggleRegistrations() {
+            const btn = document.getElementById('reg-btn');
+            const current = btn.textContent;
+            btn.textContent = current === 'Open' ? 'Closed' : 'Open';
+            btn.className = current === 'Open' ? 'bg-red-600/30 text-red-400 px-4 py-1 rounded text-sm border border-red-500' : 'bg-green-600/30 text-green-400 px-4 py-1 rounded text-sm border border-green-500';
+        }
+
+        function resetAllData() {
+            if (confirm('⚠️ WARNING: This will reset ALL data to defaults. Continue?')) {
+                localStorage.clear();
+                addLog('SYSTEM RESET INITIATED', 'error');
+                setTimeout(() => location.reload(), 1000);
+            }
+        }
+
+        function clearLocalStorage() {
+            if (confirm('Clear all local storage?')) {
+                localStorage.clear();
+                alert('Storage cleared!');
+                location.reload();
+            }
+        }
+
+        function exportSystemData() {
+            const data = {
+                timestamp: new Date().toISOString(),
+                session: JSON.parse(localStorage.getItem('xavier_session') || '{}'),
+                models: JSON.parse(localStorage.getItem('xavier_models') || '[]'),
+                files: JSON.parse(localStorage.getItem('xavier_files') || '[]'),
+                creations: JSON.parse(localStorage.getItem('xavier_creations') || '[]'),
+                posts: JSON.parse(localStorage.getItem('xavier_posts') || '[]')
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `xavier-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            addLog('System backup exported', 'success');
+        }
+
+        function broadcastMessage() {
+            const msg = prompt('Enter broadcast message:');
+            if (msg) {
+                localStorage.setItem('xavier_broadcast', msg);
+                addLog(`Broadcast sent: ${msg}`, 'success');
+                alert('Message broadcast to all users!');
+            }
+        }
+
+        function emergencyShutdown() {
+            if (confirm('🚨 EMERGENCY SHUTDOWN: This will lock the system. Continue?')) {
+                localStorage.setItem('xavier_lockdown', 'true');
+                addLog('EMERGENCY SHUTDOWN INITIATED', 'error');
+                alert('System locked! Refresh to restore.');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('xavier_session');
+            window.location.href = 'index.html';
+        }
+
+        function refreshLogs() {
+            addLog('Logs refreshed manually', 'info');
+        }
+
+        function clearLogs() {
+            document.getElementById('system-logs').innerHTML = '<div class="text-green-400">[SYSTEM] Logs cleared...</div>';
+        }
+
+        function updateDefaultAccess(level) {
+            addLog(`Default access level changed to: ${level}`, 'info');
+        }
+
+        function filterContent(type) {
+            addLog(`Filter applied: ${type}`, 'info');
+        }
+    </script>
+</body>
+</html>

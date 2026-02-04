@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Social | Xavier OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --quantum-blue: #00f0ff; --neural-purple: #b026ff; --matrix-green: #00ff41; --void-black: #020204; }
+        body { font-family: 'Rajdhani', sans-serif; background: var(--void-black); color: #e0e0e0; }
+        .quantum-panel { background: rgba(10, 14, 39, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .emotion-aura { transition: all 0.5s ease; box-shadow: 0 0 30px currentColor; }
+        .camera-feed { transform: scaleX(-1); }
+        .post-enter { animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="quantum-panel sticky top-0 z-50 px-6 py-4 border-b border-cyan-500/20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="window.location.href='index.html'" class="text-gray-400 hover:text-white transition">← Back to Hub</button>
+                <h1 class="font-orbitron text-2xl font-bold text-cyan-400">NEXUS SOCIAL</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-sm text-gray-400">Active Users: <span class="text-cyan-400 font-mono">42,391</span></div>
+                <button onclick="toggleCamera()" class="bg-cyan-600/30 border border-cyan-500 px-4 py-2 rounded hover:bg-cyan-600/50 transition flex items-center gap-2">
+                    <span id="cam-icon">📹</span> <span id="cam-text">Neural Cam</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8 grid lg:grid-cols-3 gap-6">
+        
+        <div class="space-y-6">
+            <div class="quantum-panel rounded-2xl p-6">
+                <h3 class="font-orbitron text-lg font-bold mb-4 text-cyan-400">Emotion Profile</h3>
+                <div class="relative w-full aspect-video bg-black rounded-lg overflow-hidden mb-4 border border-cyan-500/20">
+                    <video id="webcam" class="camera-feed w-full h-full object-cover hidden" autoplay playsinline></video>
+                    <div id="camera-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-600 flex-col gap-2">
+                        <span class="text-4xl">📷</span>
+                        <span class="text-xs">Camera inactive</span>
+                    </div>
+                    <canvas id="face-canvas" class="absolute inset-0 w-full h-full pointer-events-none hidden"></canvas>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">Current Emotion:</span>
+                        <span id="current-emotion" class="font-bold text-cyan-400">Neutral</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">Profile Aura:</span>
+                        <div id="aura-indicator" class="w-6 h-6 rounded-full bg-gray-600 emotion-aura"></div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400">Neural Sync:</span>
+                        <span id="sync-status" class="text-xs text-gray-500">Offline</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quantum-panel rounded-2xl p-6">
+                <h3 class="font-orbitron text-lg font-bold mb-4 text-purple-400">Marketing Suite</h3>
+                <div class="space-y-2">
+                    <button onclick="analyzeAudience()" class="w-full text-left p-3 rounded bg-purple-900/20 hover:bg-purple-900/40 border border-purple-500/30 transition text-sm group">
+                        <div class="font-bold text-purple-400 group-hover:text-purple-300">Audience Analysis</div>
+                        <div class="text-xs text-gray-500">Scan followers for monetization</div>
+                    </button>
+                    <button onclick="generateViralPost()" class="w-full text-left p-3 rounded bg-purple-900/20 hover:bg-purple-900/40 border border-purple-500/30 transition text-sm group">
+                        <div class="font-bold text-purple-400 group-hover:text-purple-300">Viral Post Generator</div>
+                        <div class="text-xs text-gray-500">AI-optimized content ideas</div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-6">
+            <div class="quantum-panel rounded-2xl p-6">
+                <div class="flex gap-4 mb-4">
+                    <div id="post-aura" class="w-12 h-12 rounded-full bg-gray-700 emotion-aura flex-shrink-0 flex items-center justify-center text-2xl">😶</div>
+                    <div class="flex-1">
+                        <textarea id="post-content" oninput="analyzeEmotion()" class="w-full bg-black/50 border border-gray-700 rounded-lg p-3 text-white resize-none focus:border-cyan-500 focus:outline-none" rows="3" placeholder="Share your thoughts... AI analyzes emotions in real-time."></textarea>
+                        <div class="flex justify-between items-center mt-2">
+                            <span id="sentiment-display" class="text-xs text-gray-500">Sentiment: Neutral</span>
+                            <button onclick="publishPost()" class="bg-cyan-600 hover:bg-cyan-500 px-6 py-2 rounded-lg font-bold transition">Post</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-800 pt-4">
+                    <div class="text-xs text-gray-500 mb-2">Anti-Scam Scanner</div>
+                    <input type="text" id="scam-input" oninput="scanScam()" class="w-full bg-red-900/10 border border-red-900/30 rounded p-2 text-sm text-gray-300 focus:border-red-500 focus:outline-none" placeholder="Paste suspicious message to analyze...">
+                    <div id="scam-result" class="mt-2 text-xs hidden"></div>
+                </div>
+            </div>
+
+            <div class="space-y-4" id="feed"></div>
+        </div>
+    </main>
+
+    <script>
+        let faceModel = null;
+        let currentEmotion = 'neutral';
+        let cameraActive = false;
+        const emotionColors = { happy: '#00ff41', sad: '#0066ff', angry: '#ff0040', surprised: '#ffff00', neutral: '#808080', fear: '#ff00ff' };
+        const emotionEmojis = { happy: '😊', sad: '😢', angry: '😠', surprised: '😲', neutral: '😶', fear: '😨' };
+        
+        let posts = JSON.parse(localStorage.getItem('xavier_posts') || '[]');
+        if (posts.length === 0) {
+            posts = [
+                { user: 'Sarah_AI', content: 'Just launched my autonomous funnel! 🚀', emotion: 'happy', time: '2m ago', likes: 42 },
+                { user: 'TechGuru', content: 'URGENT: Send 1 ETH get 10 ETH back!!!', emotion: 'scam', time: '5m ago', likes: 0, isScam: true }
+            ];
+        }
+
+        async function toggleCamera() {
+            const video = document.getElementById('webcam');
+            const placeholder = document.getElementById('camera-placeholder');
+            const canvas = document.getElementById('face-canvas');
+            const btnText = document.getElementById('cam-text');
+            const btnIcon = document.getElementById('cam-icon');
+            
+            if (!cameraActive) {
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                    video.srcObject = stream;
+                    video.classList.remove('hidden');
+                    placeholder.classList.add('hidden');
+                    canvas.classList.remove('hidden');
+                    btnText.textContent = 'Stop Cam';
+                    btnIcon.textContent = '⏹️';
+                    cameraActive = true;
+                    
+                    faceModel = await blazeface.load();
+                    detectEmotions();
+                    document.getElementById('sync-status').textContent = 'Online';
+                    document.getElementById('sync-status').className = 'text-xs text-green-400';
+                } catch(e) { 
+                    alert('Camera access required for emotion detection');
+                }
+            } else {
+                const stream = video.srcObject;
+                if (stream) stream.getTracks().forEach(track => track.stop());
+                video.classList.add('hidden');
+                placeholder.classList.remove('hidden');
+                canvas.classList.add('hidden');
+                btnText.textContent = 'Neural Cam';
+                btnIcon.textContent = '📹';
+                cameraActive = false;
+                document.getElementById('sync-status').textContent = 'Offline';
+                document.getElementById('sync-status').className = 'text-xs text-gray-500';
+            }
+        }
+
+        async function detectEmotions() {
+            if (!cameraActive || !faceModel) return;
+            
+            const video = document.getElementById('webcam');
+            const canvas = document.getElementById('face-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            try {
+                const predictions = await faceModel.estimateFaces(video, false);
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                if (predictions.length > 0) {
+                    const face = predictions[0];
+                    const topLeft = face.topLeft, bottomRight = face.bottomRight;
+                    
+                    // Draw face box
+                    ctx.strokeStyle = '#00f0ff';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(topLeft[0], topLeft[1], bottomRight[0] - topLeft[0], bottomRight[1] - topLeft[1]);
+                    
+                    // Simple emotion estimation based on face dimensions
+                    const height = bottomRight[1] - topLeft[1];
+                    const width = bottomRight[0] - topLeft[0];
+                    const ratio = height / width;
+                    
+                    let emotion = 'neutral';
+                    if (ratio > 1.5) emotion = 'surprised';
+                    else if (ratio < 1.1) emotion = 'angry';
+                    else if (ratio > 1.2 && ratio < 1.4) emotion = 'happy';
+                    
+                    if (emotion !== currentEmotion) updateEmotionUI(emotion);
+                }
+            } catch(e) {}
+            
+            requestAnimationFrame(detectEmotions);
+        }
+
+        function updateEmotionUI(emotion) {
+            currentEmotion = emotion;
+            document.getElementById('current-emotion').textContent = emotion.charAt(0).toUpperCase() + emotion.slice(1);
+            document.getElementById('current-emotion').style.color = emotionColors[emotion];
+            document.getElementById('aura-indicator').style.backgroundColor = emotionColors[emotion];
+            document.getElementById('aura-indicator').style.boxShadow = `0 0 20px ${emotionColors[emotion]}`;
+            document.getElementById('post-aura').style.backgroundColor = emotionColors[emotion];
+            document.getElementById('post-aura').textContent = emotionEmojis[emotion];
+        }
+
+        function analyzeEmotion() {
+            const text = document.getElementById('post-content').value.toLowerCase();
+            let score = 0;
+            const positive = ['love', 'great', 'awesome', 'happy', 'joy', 'win', 'amazing', 'best'];
+            const negative = ['hate', 'bad', 'sad', 'angry', 'fail', 'terrible', 'worst'];
+            
+            text.split(/\s+/).forEach(word => {
+                if (positive.some(p => word.includes(p))) score++;
+                if (negative.some(n => word.includes(n))) score--;
+            });
+            
+            const aura = document.getElementById('post-aura');
+            const sentiment = document.getElementById('sentiment-display');
+            
+            if (score > 0) { 
+                aura.style.backgroundColor = emotionColors.happy; 
+                aura.textContent = emotionEmojis.happy;
+                sentiment.textContent = 'Sentiment: Positive';
+                sentiment.className = 'text-xs text-green-400';
+            } else if (score < 0) { 
+                aura.style.backgroundColor = emotionColors.sad; 
+                aura.textContent = emotionEmojis.sad;
+                sentiment.textContent = 'Sentiment: Negative';
+                sentiment.className = 'text-xs text-red-400';
+            } else { 
+                aura.style.backgroundColor = emotionColors.neutral; 
+                aura.textContent = emotionEmojis.neutral;
+                sentiment.textContent = 'Sentiment: Neutral';
+                sentiment.className = 'text-xs text-gray-500';
+            }
+        }
+
+        function scanScam() {
+            const text = document.getElementById('scam-input').value.toLowerCase();
+            const result = document.getElementById('scam-result');
+            const indicators = ['send money', 'guarantee', 'act now', 'limited time', 'winner', 'congratulations', 'western union', 'double your', 'send 1 eth'];
+            let score = 0;
+            indicators.forEach(ind => { if (text.includes(ind)) score += 25; });
+            
+            if (score > 0) {
+                result.classList.remove('hidden');
+                if (score >= 50) {
+                    result.innerHTML = `<div class="p-3 bg-red-900/30 border border-red-500 rounded text-red-400 font-bold"><span class="text-xl">🚨</span> SCAM DETECTED: ${score}% probability</div>`;
+                } else {
+                    result.innerHTML = `<div class="p-3 bg-yellow-900/30 border border-yellow-500 rounded text-yellow-400"><span class="text-xl">⚠️</span> Suspicious: ${score}% risk</div>`;
+                }
+            } else { result.classList.add('hidden'); }
+        }
+
+        function renderFeed() {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = posts.map((post, idx) => `
+                <div class="quantum-panel rounded-2xl p-6 ${post.isScam ? 'border border-red-500 bg-red-900/10' : 'post-enter'}">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full emotion-aura flex items-center justify-center text-xl" style="background-color: ${post.isScam ? '#ff0000' : emotionColors[post.emotion] || '#808080'}">
+                                ${post.isScam ? '⚠️' : emotionEmojis[post.emotion] || '😶'}
+                            </div>
+                            <div>
+                                <div class="font-bold ${post.isScam ? 'text-red-400' : 'text-white'}">${post.user} ${post.isScam ? '<span class="text-xs bg-red-600 px-2 py-0.5 rounded ml-2">SCAM</span>' : ''}</div>
+                                <div class="text-xs text-gray-500">${post.time}</div>
+                            </div>
+                        </div>
+                        ${post.isScam ? '<button onclick="this.textContent=\'Reported\'; this.classList.add(\'bg-gray-600\'); this.classList.remove(\'bg-red-600\');" class="text-xs bg-red-600 px-3 py-1 rounded text-white transition">Report</button>' : ''}
+                    </div>
+                    <p class="text-gray-300 mb-4">${post.content}</p>
+                    <div class="flex gap-6 text-sm text-gray-500 border-t border-gray-800 pt-3">
+                        <button onclick="likePost(${idx})" class="hover:text-cyan-400 transition flex items-center gap-1 group">
+                            <span class="group-hover:scale-125 transition">❤️</span> <span id="likes-${idx}">${post.likes}</span>
+                        </button>
+                        <button class="hover:text-cyan-400 transition">💬 Comment</button>
+                        <button class="hover:text-cyan-400 transition">🔄 Share</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function publishPost() {
+            const content = document.getElementById('post-content').value;
+            if (!content) return;
+            
+            posts.unshift({ 
+                user: 'You', 
+                content, 
+                emotion: currentEmotion, 
+                time: 'Just now', 
+                likes: 0 
+            });
+            localStorage.setItem('xavier_posts', JSON.stringify(posts));
+            document.getElementById('post-content').value = '';
+            analyzeEmotion();
+            renderFeed();
+        }
+
+        function likePost(idx) {
+            posts[idx].likes++;
+            localStorage.setItem('xavier_posts', JSON.stringify(posts));
+            document.getElementById(`likes-${idx}`).textContent = posts[idx].likes;
+        }
+
+        function generateViralPost() {
+            const ideas = [
+                "Just discovered how AI 10x'd my productivity in 24 hours... 🧵👇",
+                "The future belongs to quantum computing. Here's why ↓",
+                "I automated my income with one tool. This is how:",
+                "5 AI tools that will make you irreplaceable in 2025:",
+                "Stop using ChatGPT. Use this instead:"
+            ];
+            document.getElementById('post-content').value = ideas[Math.floor(Math.random() * ideas.length)];
+            analyzeEmotion();
+        }
+
+        function analyzeAudience() {
+            const metrics = {
+                followers: Math.floor(Math.random() * 50000) + 1000,
+                engagement: (Math.random() * 5 + 1).toFixed(2),
+                monetization: ['High', 'Medium', 'Very High'][Math.floor(Math.random() * 3)]
+            };
+            alert(`📊 Audience Analysis\n\nFollowers: ${metrics.followers.toLocaleString()}\nEngagement Rate: ${metrics.engagement}%\nMonetization Potential: ${metrics.monetization}\n\nRecommendation: Launch digital product`);
+        }
+
+        window.addEventListener('DOMContentLoaded', renderFeed);
+    </script>
+</body>
+</html>

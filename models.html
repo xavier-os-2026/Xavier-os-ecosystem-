@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talent Nexus | Xavier OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --void-black: #020204; }
+        body { font-family: 'Rajdhani', sans-serif; background: var(--void-black); color: #e0e0e0; }
+        .quantum-panel { background: rgba(10, 14, 39, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .model-card { transition: all 0.3s ease; }
+        .model-card:hover { transform: translateY(-5px); box-shadow: 0 0 30px rgba(176, 38, 255, 0.3); }
+        .model-avatar { 
+            width: 80px; 
+            height: 80px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 2rem;
+            border: 3px solid rgba(255,255,255,0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        .model-avatar::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.3), transparent);
+            transform: rotate(45deg);
+            transition: all 0.5s;
+            opacity: 0;
+        }
+        .model-card:hover .model-avatar::before {
+            animation: shine 0.5s ease-in-out;
+        }
+        @keyframes shine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); opacity: 0; }
+        }
+        .attribute-tag {
+            background: rgba(176, 38, 255, 0.2);
+            border: 1px solid rgba(176, 38, 255, 0.5);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            color: #d8b4fe;
+        }
+        .selected-model {
+            border: 2px solid #00f0ff;
+            box-shadow: 0 0 30px rgba(0, 240, 255, 0.3);
+        }
+        .use-btn {
+            background: linear-gradient(135deg, #00f0ff 0%, #0066ff 100%);
+            color: black;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="quantum-panel sticky top-0 z-50 px-6 py-4 border-b border-violet-500/20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="window.location.href='index.html'" class="text-gray-400 hover:text-white transition">← Back to Hub</button>
+                <h1 class="font-orbitron text-2xl font-bold text-violet-400">TALENT NEXUS</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-sm text-gray-400">Models: <span id="model-count" class="text-violet-400 font-mono">0</span></span>
+                <span class="text-sm text-gray-400">Active: <span id="active-model" class="text-cyan-400 font-mono">None</span></span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Model Creation Interface -->
+        <div class="quantum-panel rounded-2xl p-6 mb-8">
+            <h3 class="font-orbitron text-xl font-bold mb-6 text-violet-400 flex items-center gap-2">
+                <span>👤</span> Create AI Model Profile
+            </h3>
+            
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Model Name</label>
+                        <input type="text" id="model-name" class="w-full bg-black/50 border border-violet-500/30 rounded-lg p-3 text-white focus:border-violet-500 focus:outline-none" placeholder="e.g., Athena, Cyber-X, Neon">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Role/Profession</label>
+                        <select id="model-role" class="w-full bg-black/50 border border-violet-500/30 rounded-lg p-3 text-white focus:border-violet-500 focus:outline-none">
+                            <option value="marketing">Marketing Specialist</option>
+                            <option value="host">Presentation Host</option>
+                            <option value="brand">Brand Ambassador</option>
+                            <option value="support">Customer Support</option>
+                            <option value="influencer">Social Media Influencer</option>
+                            <option value="educator">Educator/Trainer</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Age Range</label>
+                        <select id="model-age" class="w-full bg-black/50 border border-violet-500/30 rounded-lg p-3 text-white focus:border-violet-500 focus:outline-none">
+                            <option value="20s">Early 20s</option>
+                            <option value="30s">Mid 30s</option>
+                            <option value="40s">40s</option>
+                            <option value="50s">50s+</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Visual Style</label>
+                        <select id="model-style" class="w-full bg-black/50 border border-violet-500/30 rounded-lg p-3 text-white focus:border-violet-500 focus:outline-none">
+                            <option value="professional">Professional Business</option>
+                            <option value="casual">Casual/Relatable</option>
+                            <option value="futuristic">Futuristic/Cyberpunk</option>
+                            <option value="luxury">Luxury/High-End</option>
+                            <option value="friendly">Friendly/Approachable</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Hair/Appearance</label>
+                        <input type="text" id="model-look" class="w-full bg-black/50 border border-violet-500/30 rounded-lg p-3 text-white focus:border-violet-500 focus:outline-none" placeholder="e.g., Brunette, short hair, glasses">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Personality Traits</label>
+                        <input type="text" id="model-traits" class="w-full bg-black/50 border border-violet-500/30 rounded-lg p-3 text-white focus:border-violet-500 focus:outline-none" placeholder="e.g., Charismatic, energetic, trustworthy">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 flex gap-4">
+                <button onclick="generateModel()" class="flex-1 bg-violet-600 hover:bg-violet-500 py-3 rounded-lg font-bold transition">Generate Model Profile</button>
+                <button onclick="clearForm()" class="px-6 py-3 border border-gray-600 rounded-lg text-gray-400 hover:text-white hover:border-gray-400 transition">Clear</button>
+            </div>
+        </div>
+
+        <!-- Active Model Banner -->
+        <div id="active-banner" class="hidden quantum-panel rounded-2xl p-4 mb-8 border border-cyan-500/50 bg-cyan-900/10">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-xl">⭐</div>
+                    <div>
+                        <div class="font-bold text-cyan-400">Active Model: <span id="active-name">Name</span></div>
+                        <div class="text-sm text-gray-400">This model will be used for all image/video generation in Neural Studio</div>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="goToStudio()" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg font-bold text-sm transition">Open Neural Studio</button>
+                    <button onclick="clearActiveModel()" class="border border-red-500 text-red-400 hover:bg-red-600/20 px-4 py-2 rounded-lg text-sm transition">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Models Grid -->
+        <div class="mb-4 flex justify-between items-center">
+            <h3 class="font-orbitron text-lg font-bold text-white">Your Model Roster</h3>
+            <div class="text-sm text-gray-400">Click "Use Model" to set as active for content creation</div>
+        </div>
+
+        <div id="model-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="text-gray-500 text-center py-12 col-span-full">No models generated yet. Create your first AI model above.</div>
+        </div>
+    </main>
+
+    <script>
+        let models = JSON.parse(localStorage.getItem('xavier_models') || '[]');
+        let activeModelId = localStorage.getItem('xavier_active_model') || null;
+
+        function updateCount() {
+            document.getElementById('model-count').textContent = models.length;
+        }
+
+        function getRoleIcon(role) {
+            const icons = {
+                marketing: '📈',
+                host: '🎤',
+                brand: '👔',
+                support: '🎧',
+                influencer: '📱',
+                educator: '📚'
+            };
+            return icons[role] || '👤';
+        }
+
+        function generateModel() {
+            const name = document.getElementById('model-name').value.trim();
+            const role = document.getElementById('model-role').value;
+            const age = document.getElementById('model-age').value;
+            const style = document.getElementById('model-style').value;
+            const look = document.getElementById('model-look').value.trim();
+            const traits = document.getElementById('model-traits').value.trim();
+
+            if (!name) return alert('Enter a model name');
+
+            const model = {
+                id: 'MDL-' + Date.now().toString(36).toUpperCase(),
+                name: name,
+                role: role,
+                age: age,
+                style: style,
+                look: look || 'Standard appearance',
+                traits: traits || 'Professional',
+                created: new Date().toLocaleDateString(),
+                usageCount: 0,
+                color: `hsl(${Math.random() * 360}, 70%, 60%)`
+            };
+
+            models.push(model);
+            localStorage.setItem('xavier_models', JSON.stringify(models));
+            renderModels();
+            clearForm();
+            
+            // Auto-set as active if it's the first model
+            if (models.length === 1) {
+                setActiveModel(model.id);
+            }
+        }
+
+        function renderModels() {
+            const grid = document.getElementById('model-grid');
+            if (models.length === 0) {
+                grid.innerHTML = '<div class="text-gray-500 text-center py-12 col-span-full">No models generated yet. Create your first AI model above.</div>';
+                updateCount();
+                return;
+            }
+
+            grid.innerHTML = models.map((model, idx) => `
+                <div class="model-card quantum-panel rounded-2xl p-6 relative ${activeModelId === model.id ? 'selected-model' : ''}" id="card-${model.id}">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="model-avatar" style="background: ${model.color}">
+                            ${getRoleIcon(model.role)}
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="setActiveModel('${model.id}')" class="use-btn px-3 py-1 rounded text-xs" ${activeModelId === model.id ? 'disabled style="opacity:0.5"' : ''}>
+                                ${activeModelId === model.id ? '✓ Active' : 'Use Model'}
+                            </button>
+                            <button onclick="deleteModel(${idx})" class="text-red-400 hover:text-red-300 text-xs px-2">✕</button>
+                        </div>
+                    </div>
+                    
+                    <h4 class="font-orbitron text-lg font-bold text-white mb-1">${model.name}</h4>
+                    <div class="text-sm text-violet-400 mb-3 capitalize">${model.role.replace('-', ' ')} • ${model.age}</div>
+                    
+                    <div class="space-y-2 mb-4">
+                        <div class="flex flex-wrap gap-2">
+                            <span class="attribute-tag">${model.style}</span>
+                            <span class="attribute-tag">${model.age}</span>
+                        </div>
+                        <div class="text-xs text-gray-400">
+                            <span class="text-gray-500">Look:</span> ${model.look}
+                        </div>
+                        <div class="text-xs text-gray-400">
+                            <span class="text-gray-500">Traits:</span> ${model.traits}
+                        </div>
+                    </div>
+                    
+                    <div class="flex justify-between items-center pt-3 border-t border-gray-800 text-xs text-gray-500">
+                        <span>ID: ${model.id}</span>
+                        <span>Used: ${model.usageCount} times</span>
+                    </div>
+                </div>
+            `).join('');
+            
+            updateCount();
+            updateActiveBanner();
+        }
+
+        function setActiveModel(id) {
+            activeModelId = id;
+            localStorage.setItem('xavier_active_model', id);
+            
+            // Update usage count
+            const model = models.find(m => m.id === id);
+            if (model) {
+                model.usageCount++;
+                localStorage.setItem('xavier_models', JSON.stringify(models));
+            }
+            
+            renderModels();
+            updateActiveBanner();
+        }
+
+        function updateActiveBanner() {
+            const banner = document.getElementById('active-banner');
+            if (activeModelId) {
+                const model = models.find(m => m.id === activeModelId);
+                if (model) {
+                    document.getElementById('active-name').textContent = model.name;
+                    document.getElementById('active-model').textContent = model.name;
+                    banner.classList.remove('hidden');
+                    return;
+                }
+            }
+            banner.classList.add('hidden');
+            document.getElementById('active-model').textContent = 'None';
+        }
+
+        function clearActiveModel() {
+            activeModelId = null;
+            localStorage.removeItem('xavier_active_model');
+            renderModels();
+        }
+
+        function deleteModel(idx) {
+            if (confirm('Delete this model permanently?')) {
+                const deletedId = models[idx].id;
+                models.splice(idx, 1);
+                localStorage.setItem('xavier_models', JSON.stringify(models));
+                if (activeModelId === deletedId) {
+                    clearActiveModel();
+                }
+                renderModels();
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('model-name').value = '';
+            document.getElementById('model-look').value = '';
+            document.getElementById('model-traits').value = '';
+        }
+
+        function goToStudio() {
+            window.location.href = 'creative.html';
+        }
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            renderModels();
+        });
+    </script>
+</body>
+</html>

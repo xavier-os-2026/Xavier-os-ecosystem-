@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibe Builder | Xavier OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&family=Fira+Code&display=swap" rel="stylesheet">
+    <style>
+        :root { --void-black: #020204; }
+        body { font-family: 'Rajdhani', sans-serif; background: var(--void-black); color: #e0e0e0; }
+        .quantum-panel { background: rgba(10, 14, 39, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        .typing-cursor::after { content: '|'; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="quantum-panel sticky top-0 z-50 px-6 py-4 border-b border-pink-500/20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="window.location.href='index.html'" class="text-gray-400 hover:text-white transition">← Back to Hub</button>
+                <h1 class="font-orbitron text-2xl font-bold text-pink-400">VIBE BUILDER</h1>
+            </div>
+            <div class="text-sm text-gray-400">Natural Language → Production Code</div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8 grid lg:grid-cols-2 gap-8 h-[calc(100vh-100px)]">
+        
+        <div class="flex flex-col gap-6">
+            <div class="quantum-panel rounded-2xl p-6 flex-1 flex flex-col">
+                <h3 class="font-orbitron text-lg font-bold mb-4 text-pink-400">Describe Your Application</h3>
+                <textarea id="vibe-prompt" class="flex-1 w-full bg-black/50 border border-pink-500/30 rounded-lg p-4 text-white resize-none focus:border-pink-500 focus:outline-none mb-4" placeholder="Example: 'Create a dark-themed crypto dashboard with real-time charts, MetaMask integration, and AI trading signals. Use glassmorphism and neon accents.'"></textarea>
+                
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <select id="app-type" class="bg-black/50 border border-pink-500/30 rounded-lg p-3 text-white focus:border-pink-500 focus:outline-none">
+                        <option value="react">React Web App</option>
+                        <option value="vue">Vue Dashboard</option>
+                        <option value="mobile">Mobile App</option>
+                        <option value="ecommerce">E-commerce</option>
+                    </select>
+                    <select id="complexity" class="bg-black/50 border border-pink-500/30 rounded-lg p-3 text-white focus:border-pink-500 focus:outline-none">
+                        <option value="simple">Simple</option>
+                        <option value="standard" selected>Standard</option>
+                        <option value="complex">Complex</option>
+                    </select>
+                </div>
+                
+                <button onclick="vibeCode()" id="generate-btn" class="w-full bg-gradient-to-r from-pink-600 to-purple-600 py-4 rounded-lg font-bold text-lg hover:shadow-lg hover:shadow-pink-500/50 transition">✨ GENERATE APPLICATION</button>
+            </div>
+        </div>
+
+        <div class="quantum-panel rounded-2xl p-6 flex flex-col">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-orbitron text-lg font-bold text-cyan-400">Generated Code</h3>
+                <div class="flex gap-2">
+                    <button onclick="copyCode()" class="text-xs bg-gray-800 hover:bg-gray-700 px-3 py-2 rounded transition">Copy</button>
+                    <button onclick="downloadCode()" class="text-xs bg-cyan-600 hover:bg-cyan-500 px-3 py-2 rounded transition">Download</button>
+                </div>
+            </div>
+            <div id="code-container" class="flex-1 bg-black/80 rounded-lg p-4 code-font text-sm overflow-auto border border-gray-800 text-gray-300">
+                <div class="text-gray-600 italic">// AI will generate production-ready code here...</div>
+            </div>
+            <div id="preview-area" class="hidden mt-4 h-32 bg-white rounded-lg overflow-hidden">
+                <div class="w-full h-full flex items-center justify-center text-gray-800">
+                    Preview rendering...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const templates = {
+            react: (prompt) => `import React, { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+// Generated for: ${prompt.substring(0, 50)}...
+
+export default function QuantumApp() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    // Simulating quantum data stream
+    const generateData = () => {
+      const newData = Array.from({length: 20}, (_, i) => ({
+        time: \\`T-\\${20-i}\\`,
+        value: Math.floor(Math.random() * 1000) + 500,
+        neural: Math.floor(Math.random() * 800) + 200
+      }));
+      setData(newData);
+      setLoading(false);
+    };
+    generateData();
+    const interval = setInterval(generateData, 3000);
+    return () => clearInterval(interval);
+  }, []);
+  
+  if (loading) return <div className="min-h-screen bg-black text-cyan-400 flex items-center justify-center">Initializing...</div>;
+  
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white p-6">
+      <header className="mb-8 border-b border-cyan-500/30 pb-4">
+        <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-500">
+          Quantum Dashboard
+        </h1>
+        <p className="text-gray-400 mt-2">Real-time neural analytics</p>
+      </header>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-gray-800/50 backdrop-blur border border-cyan-500/20 rounded-xl p-6">
+          <div className="text-gray-400 text-sm">Neural Load</div>
+          <div className="text-3xl font-bold text-cyan-400 mt-2">98.4%</div>
+        </div>
+        <div className="bg-gray-800/50 backdrop-blur border border-purple-500/20 rounded-xl p-6">
+          <div className="text-gray-400 text-sm">Quantum Coherence</div>
+          <div className="text-3xl font-bold text-purple-400 mt-2">100%</div>
+        </div>
+        <div className="bg-gray-800/50 backdrop-blur border border-pink-500/20 rounded-xl p-6">
+          <div className="text-gray-400 text-sm">Processing</div>
+          <div className="text-3xl font-bold text-pink-400 mt-2">42.9 PFLOPS</div>
+        </div>
+      </div>
+      
+      <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-6 h-96">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+            <XAxis dataKey="time" stroke="#666" />
+            <YAxis stroke="#666" />
+            <Tooltip 
+              contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #333' }}
+              labelStyle={{ color: '#00f0ff' }}
+            />
+            <Line type="monotone" dataKey="value" stroke="#00f0ff" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="neural" stroke="#b026ff" strokeWidth={2} dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}`,
+            vue: (prompt) => `<template>
+  <div class="quantum-dashboard">
+    <nav class="sidebar">
+      <h1>Quantum Vue</h1>
+      <ul>
+        <li v-for="item in menu" :key="item">{{ item }}</li>
+      </ul>
+    </nav>
+    <main>
+      <h2>${prompt.substring(0, 30)}...</h2>
+      <div class="metrics">
+        <div v-for="metric in metrics" :key="metric.name" class="card">
+          <span class="label">{{ metric.name }}</span>
+          <span class="value" :style="{ color: metric.color }">{{ metric.value }}</span>
+        </div>
+      </div>
+    </main>
+  </div>
+</template>
+
+<script>
+export default {
+  data() {
+    return {
+      menu: ['Dashboard', 'Analytics', 'Settings'],
+      metrics: [
+        { name: 'CPU', value: '45%', color: '#00f0ff' },
+        { name: 'Memory', value: '72%', color: '#b026ff' },
+        { name: 'Network', value: '1.2GB/s', color: '#00ff41' }
+      ]
+    }
+  }
+}
+<\/script>`,
+            mobile: (prompt) => `// React Native Mobile App
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+
+export default function MobileApp() {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>Quantum Mobile</Text>
+      <ScrollView style={styles.content}>
+        <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonText}>Initialize</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#020204', padding: 20 },
+  header: { color: '#00f0ff', fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
+  button: { backgroundColor: '#b026ff', padding: 15, borderRadius: 10, alignItems: 'center' },
+  buttonText: { color: 'white', fontSize: 16 }
+});`,
+            ecommerce: (prompt) => `// Next.js E-commerce
+import Head from 'next/head';
+import { useState } from 'react';
+import { ShoppingCart, Star } from 'lucide-react';
+
+export default function Store() {
+  const [cart, setCart] = useState([]);
+  
+  const products = [
+    { id: 1, name: 'Quantum Headset', price: 299, rating: 5 },
+    { id: 2, name: 'Neural Link', price: 599, rating: 4.8 }
+  ];
+  
+  return (
+    <div className="min-h-screen bg-black text-white">
+      <Head><title>Quantum Store</title></Head>
+      <header className="border-b border-cyan-500/20 p-6 flex justify-between">
+        <h1 className="text-2xl font-bold text-cyan-400">Quantum Commerce</h1>
+        <div className="flex items-center gap-2">
+          <ShoppingCart />
+          <span>{cart.length}</span>
+        </div>
+      </header>
+      <div className="grid grid-cols-2 gap-6 p-6">
+        {products.map(p => (
+          <div key={p.id} className="border border-gray-800 rounded-xl p-4">
+            <h3 className="text-lg font-bold">{p.name}</h3>
+            <div className="flex items-center gap-1 text-yellow-400">
+              <Star size={16} /> {p.rating}
+            </div>
+            <p className="text-2xl font-bold mt-2">${p.price}</p>
+            <button 
+              onClick={() => setCart([...cart, p])}
+              className="w-full mt-4 bg-cyan-600 py-2 rounded"
+            >
+              Add to Cart
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}`
+        };
+
+        function vibeCode() {
+            const prompt = document.getElementById('vibe-prompt').value;
+            const type = document.getElementById('app-type').value;
+            const container = document.getElementById('code-container');
+            const btn = document.getElementById('generate-btn');
+            
+            if (!prompt) {
+                container.innerHTML = '<div class="text-red-400">⚠️ Please describe your application first</div>';
+                return;
+            }
+            
+            btn.disabled = true;
+            btn.textContent = 'Generating...';
+            container.innerHTML = '<div class="text-pink-400 typing-cursor">Analyzing requirements</div>';
+            
+            setTimeout(() => {
+                container.innerHTML = '<div class="text-pink-400 typing-cursor">Designing architecture</div>';
+            }, 800);
+            
+            setTimeout(() => {
+                container.innerHTML = '<div class="text-pink-400 typing-cursor">Writing production code</div>';
+            }, 1600);
+            
+            setTimeout(() => {
+                const code = templates[type](prompt);
+                container.innerHTML = `<pre class="text-xs text-gray-300 overflow-auto"><code>${escapeHtml(code)}</code></pre>`;
+                btn.disabled = false;
+                btn.textContent = '✨ GENERATE APPLICATION';
+                
+                // Save to history
+                const history = JSON.parse(localStorage.getItem('xavier_builds') || '[]');
+                history.push({ prompt, type, date: new Date().toISOString() });
+                localStorage.setItem('xavier_builds', JSON.stringify(history));
+            }, 2500);
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        function copyCode() {
+            const code = document.getElementById('code-container').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                alert('Code copied to clipboard!');
+            });
+        }
+
+        function downloadCode() {
+            const code = document.getElementById('code-container').textContent;
+            const blob = new Blob([code], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `xavier-app-${Date.now()}.jsx`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

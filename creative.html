@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neural Studio | Xavier OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --void-black: #020204; }
+        body { font-family: 'Rajdhani', sans-serif; background: var(--void-black); color: #e0e0e0; }
+        .quantum-panel { background: rgba(10, 14, 39, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .generating { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .model-badge {
+            background: linear-gradient(135deg, rgba(0, 240, 255, 0.2), rgba(176, 38, 255, 0.2));
+            border: 1px solid rgba(0, 240, 255, 0.5);
+            animation: glow 2s infinite;
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(0, 240, 255, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(0, 240, 255, 0.8); }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="quantum-panel sticky top-0 z-50 px-6 py-4 border-b border-yellow-500/20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="window.location.href='index.html'" class="text-gray-400 hover:text-white transition">← Back to Hub</button>
+                <h1 class="font-orbitron text-2xl font-bold text-yellow-400">NEURAL STUDIO</h1>
+            </div>
+            <div class="flex items-center gap-4">
+                <div id="active-model-display" class="hidden model-badge px-4 py-2 rounded-full text-sm flex items-center gap-2">
+                    <span class="text-cyan-400">👤</span>
+                    <span class="text-white">Using: <span id="model-name" class="font-bold">None</span></span>
+                    <button onclick="clearModel()" class="ml-2 text-gray-400 hover:text-white">✕</button>
+                </div>
+                <div class="text-sm text-gray-400">GPU Cluster: <span class="text-green-400 font-mono">Online</span></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Model Selection Alert -->
+        <div id="model-alert" class="hidden mb-6 quantum-panel rounded-xl p-4 border border-cyan-500/30 bg-cyan-900/10 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <span class="text-2xl">💡</span>
+                <div>
+                    <div class="text-cyan-400 font-bold">Model Available</div>
+                    <div class="text-sm text-gray-400">You have models in Talent Nexus. Select one for consistent character generation.</div>
+                </div>
+            </div>
+            <button onclick="window.location.href='models.html'" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg font-bold text-sm transition">Select Model</button>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-6 mb-8">
+            <div class="quantum-panel rounded-2xl p-6">
+                <h3 class="font-orbitron text-lg font-bold text-yellow-400 mb-3">Text to Image</h3>
+                <textarea id="img-prompt" class="w-full h-24 bg-black/50 border border-yellow-500/30 rounded-lg p-2 text-sm mb-2 focus:border-yellow-500 focus:outline-none text-gray-300" placeholder="Describe your image..."></textarea>
+                <select id="img-style" class="w-full bg-black/50 border border-yellow-500/30 rounded-lg p-2 text-sm mb-2 text-gray-300">
+                    <option value="cyberpunk">Cyberpunk</option>
+                    <option value="realistic">Photorealistic</option>
+                    <option value="corporate">Corporate/Professional</option>
+                    <option value="abstract">Abstract</option>
+                    <option value="3d">3D Render</option>
+                </select>
+                <div class="flex gap-2 mb-2">
+                <button onclick="generate('image')" class="flex-1 bg-yellow-600/30 border border-yellow-500 py-2 rounded text-sm hover:bg-yellow-600/50 transition">Generate 4K Image</button>
+                <button onclick="batchGenerate('image')" class="bg-yellow-600/20 border border-yellow-500/50 px-3 rounded text-sm hover:bg-yellow-600/30" title="Generate 4 variations">x4</button>
+            </div>
+                <div class="text-xs text-gray-500 mt-2">
+                    <span id="img-model-hint" class="hidden text-cyan-400">Model characteristics will be applied</span>
+                </div>
+            </div>
+            
+            <div class="quantum-panel rounded-2xl p-6">
+                <h3 class="font-orbitron text-lg font-bold text-cyan-400 mb-3">Text to Video</h3>
+                <textarea id="vid-prompt" class="w-full h-24 bg-black/50 border border-cyan-500/30 rounded-lg p-2 text-sm mb-2 focus:border-cyan-500 focus:outline-none text-gray-300" placeholder="Video scene description..."></textarea>
+                <select id="vid-length" class="w-full bg-black/50 border border-cyan-500/30 rounded-lg p-2 text-sm mb-2 text-gray-300">
+                    <option value="15">15 seconds</option>
+                    <option value="30">30 seconds</option>
+                    <option value="60">60 seconds</option>
+                </select>
+                <button onclick="generate('video')" class="w-full bg-cyan-600/30 border border-cyan-500 py-2 rounded text-sm hover:bg-cyan-600/50 transition">Generate Video</button>
+                <div class="text-xs text-gray-500 mt-2">
+                    <span id="vid-model-hint" class="hidden text-cyan-400">Using active model profile</span>
+                </div>
+            </div>
+            
+            <div class="quantum-panel rounded-2xl p-6">
+                <h3 class="font-orbitron text-lg font-bold text-purple-400 mb-3">Photo to Video (Animate)</h3>
+                <input type="file" id="photo-input" accept="image/*" class="w-full text-xs mb-2 text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-purple-600/30 file:text-purple-400 hover:file:bg-purple-600/50" onchange="previewPhoto(this)">
+                <div id="photo-preview" class="w-full h-24 bg-black/50 rounded-lg mb-2 flex items-center justify-center text-gray-600 text-xs overflow-hidden relative">
+                    <span class="relative z-10">No image selected</span>
+                    <img id="preview-img" class="absolute inset-0 w-full h-full object-cover hidden">
+                </div>
+                <input type="text" id="motion-prompt" class="w-full bg-black/50 border border-purple-500/30 rounded-lg p-2 text-sm mb-2 focus:border-purple-500 focus:outline-none text-gray-300" placeholder="Motion description...">
+                <button onclick="generate('animate')" class="w-full bg-purple-600/30 border border-purple-500 py-2 rounded text-sm hover:bg-purple-600/50 transition">Animate Photo</button>
+            </div>
+        </div>
+
+        <!-- Generation Settings -->
+        <div class="quantum-panel rounded-2xl p-6 mb-8">
+            <h3 class="font-orbitron text-lg font-bold text-white mb-4">Generation Settings</h3>
+            <div class="grid md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Consistency Level</label>
+                    <select id="consistency" class="w-full bg-black/50 border border-gray-700 rounded p-2 text-sm text-gray-300">
+                        <option value="strict">Strict (Same face/clothes)</option>
+                        <option value="loose">Loose (Similar features)</option>
+                        <option value="creative">Creative (Artistic interpretation)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Resolution</label>
+                    <select class="w-full bg-black/50 border border-gray-700 rounded p-2 text-sm text-gray-300">
+                        <option>1024x1024</option>
+                        <option>1920x1080</option>
+                        <option>4K (3840x2160)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Model Influence</label>
+                    <input type="range" min="0" max="100" value="80" class="w-full accent-cyan-500" id="model-influence">
+                </div>
+            </div>
+        </div>
+
+        <div id="gallery" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+    </main>
+
+    <script>
+        let galleryItems = JSON.parse(localStorage.getItem('xavier_creations') || '[]');
+        let activeModel = JSON.parse(localStorage.getItem('xavier_active_model_data') || 'null');
+        
+        // Check for models on load
+        window.addEventListener('DOMContentLoaded', () => {
+            const models = JSON.parse(localStorage.getItem('xavier_models') || '[]');
+            const activeModelId = localStorage.getItem('xavier_active_model');
+            
+            if (models.length > 0 && !activeModelId) {
+                document.getElementById('model-alert').classList.remove('hidden');
+            }
+            
+            if (activeModelId) {
+                const model = models.find(m => m.id === activeModelId);
+                if (model) {
+                    setActiveModel(model);
+                }
+            }
+            
+            loadGallery();
+        });
+
+        function setActiveModel(model) {
+            activeModel = model;
+            localStorage.setItem('xavier_active_model_data', JSON.stringify(model));
+            document.getElementById('model-name').textContent = model.name;
+            document.getElementById('active-model-display').classList.remove('hidden');
+            document.getElementById('img-model-hint').classList.remove('hidden');
+            document.getElementById('vid-model-hint').classList.remove('hidden');
+            document.getElementById('model-alert').classList.add('hidden');
+            
+            // Pre-fill prompts with model characteristics
+            const basePrompt = `${model.style} ${model.role}, ${model.look}, ${model.traits}`;
+            document.getElementById('img-prompt').placeholder = `Describe scene with ${model.name}... (e.g., "giving presentation in futuristic office")`;
+        }
+
+        function clearModel() {
+            activeModel = null;
+            localStorage.removeItem('xavier_active_model');
+            localStorage.removeItem('xavier_active_model_data');
+            document.getElementById('active-model-display').classList.add('hidden');
+            document.getElementById('img-model-hint').classList.add('hidden');
+            document.getElementById('vid-model-hint').classList.add('hidden');
+            document.getElementById('img-prompt').placeholder = "Describe your image...";
+        }
+
+        function previewPhoto(input) {
+            const preview = document.getElementById('photo-preview');
+            const img = document.getElementById('preview-img');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                    preview.querySelector('span').classList.add('hidden');
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function generate(type, batch = false) {
+            const gallery = document.getElementById('gallery');
+            const count = batch ? 4 : 1;
+            
+            for (let i = 0; i < count; i++) {
+                createGeneration(type, gallery, i);
+            }
+        }
+
+        function batchGenerate(type) {
+            generate(type, true);
+        }
+
+        function createGeneration(type, gallery, delay = 0) {
+            setTimeout(() => {
+                const id = Date.now() + Math.random();
+                const colors = ['from-purple-600 to-blue-600', 'from-cyan-500 to-green-500', 'from-pink-500 to-orange-500', 'from-yellow-500 to-red-500'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                
+                let prompt = '';
+                if (type === 'image') prompt = document.getElementById('img-prompt').value;
+                else if (type === 'video') prompt = document.getElementById('vid-prompt').value;
+                else prompt = document.getElementById('motion-prompt').value;
+                
+                // Add model characteristics to prompt if active
+                if (activeModel) {
+                    const influence = document.getElementById('model-influence').value;
+                    const consistency = document.getElementById('consistency').value;
+                    const modelDesc = `${activeModel.look}, ${activeModel.style} style, ${activeModel.age} years old`;
+                    
+                    if (prompt) {
+                        prompt = `${prompt} featuring ${activeModel.name} (${modelDesc}) [Consistency: ${consistency}]`;
+                    } else {
+                        prompt = `${activeModel.name}: ${modelDesc} [Consistency: ${consistency}]`;
+                    }
+                }
+                
+                if (!prompt && type !== 'animate') prompt = 'AI Generated Content';
+                
+                const div = document.createElement('div');
+                div.id = `gen-${id}`;
+                div.className = 'aspect-square bg-gradient-to-br ${color} rounded-lg flex items-center justify-center text-4xl generating relative overflow-hidden';
+                div.innerHTML = `
+                    <div class="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
+                        <div class="text-2xl mb-2">${type === 'image' ? '🖼️' : type === 'video' ? '🎬' : '✨'}</div>
+                        <div class="text-xs text-white animate-pulse">Generating${activeModel ? ' with ' + activeModel.name : ''}...</div>
+                        <div class="text-[10px] text-gray-400 mt-1 w-3/4 text-center truncate">${prompt}</div>
+                    </div>
+                `;
+                gallery.prepend(div);
+                
+                // Generate time based on type
+                const genTime = type === 'video' ? 5000 : type === 'animate' ? 4000 : 2500;
+                
+                setTimeout(() => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 400;
+                    canvas.height = 400;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Generate image based on model if available
+                    if (activeModel) {
+                        generateModelImage(ctx, activeModel, type);
+                    } else {
+                        generateGenericImage(ctx, type);
+                    }
+                    
+                    const dataUrl = canvas.toDataURL();
+                    div.innerHTML = `
+                        <img src="${dataUrl}" class="w-full h-full object-cover">
+                        <div class="absolute bottom-0 left-0 right-0 bg-black/70 p-2 text-xs">
+                            <div class="truncate text-white font-bold">${activeModel ? activeModel.name + ':' : ''} ${type.toUpperCase()}</div>
+                            <div class="text-gray-400 text-[10px]">${new Date().toLocaleTimeString()} • ${prompt.substring(0, 30)}...</div>
+                            ${activeModel ? '<span class="text-cyan-400 text-[10px]">Model: ' + activeModel.id + '</span>' : ''}
+                        </div>
+                        <div class="absolute top-2 right-2 flex gap-1 opacity-0 hover:opacity-100 transition">
+                            <button onclick="downloadImage('${dataUrl}')" class="w-8 h-8 bg-cyan-600 rounded-full text-white text-xs flex items-center justify-center" title="Download">💾</button>
+                            <button onclick="regenerate('${type}', ${id})" class="w-8 h-8 bg-purple-600 rounded-full text-white text-xs flex items-center justify-center" title="Regenerate">🔄</button>
+                            <button onclick="this.parentElement.parentElement.remove()" class="w-8 h-8 bg-red-600 rounded-full text-white text-xs flex items-center justify-center">✕</button>
+                        </div>
+                    `;
+                    div.classList.remove('generating');
+                    div.onmouseenter = () => div.querySelector('.absolute.top-2').style.opacity = '1';
+                    div.onmouseleave = () => div.querySelector('.absolute.top-2').style.opacity = '0';
+                    
+                    // Save to gallery
+                    galleryItems.push({ 
+                        type, 
+                        prompt, 
+                        data: dataUrl, 
+                        date: new Date().toISOString(),
+                        model: activeModel ? activeModel.id : null,
+                        modelName: activeModel ? activeModel.name : null
+                    });
+                    localStorage.setItem('xavier_creations', JSON.stringify(galleryItems));
+                    
+                    // Update model usage count
+                    if (activeModel) {
+                        updateModelUsage(activeModel.id);
+                    }
+                }, genTime);
+            }, delay * 500);
+        }
+
+        function generateModelImage(ctx, model, type) {
+            // Create consistent appearance based on model attributes
+            const seed = model.id.split('').reduce((a,b)=>a+b.charCodeAt(0),0);
+            
+            // Background based on style
+            if (model.style === 'futuristic') {
+                const grad = ctx.createLinearGradient(0,0,400,400);
+                grad.addColorStop(0, '#0a0e27');
+                grad.addColorStop(1, '#1a1f4b');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0,0,400,400);
+                
+                // Add neon accents
+                ctx.strokeStyle = '#00f0ff';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, 300);
+                ctx.lineTo(400, 300);
+                ctx.stroke();
+            } else if (model.style === 'professional') {
+                ctx.fillStyle = '#f0f0f0';
+                ctx.fillRect(0,0,400,400);
+                ctx.fillStyle = '#333';
+                ctx.fillRect(50, 50, 300, 300);
+            } else {
+                const grad = ctx.createLinearGradient(0,0,400,400);
+                grad.addColorStop(0, `hsl(${seed % 360}, 50%, 20%)`);
+                grad.addColorStop(1, `hsl(${seed % 360}, 50%, 40%)`);
+                ctx.fillStyle = grad;
+                ctx.fillRect(0,0,400,400);
+            }
+            
+            // Generate avatar representation
+            ctx.save();
+            ctx.translate(200, 200);
+            
+            // Face color based on age
+            const skinTones = ['#f5d0b5', '#e8b8a0', '#d4a373', '#c68642'];
+            ctx.fillStyle = skinTones[seed % skinTones.length];
+            ctx.beginPath();
+            ctx.arc(0, 0, 80, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Hair based on look description
+            if (model.look.includes('blonde')) ctx.fillStyle = '#ffd700';
+            else if (model.look.includes('brunette') || model.look.includes('brown')) ctx.fillStyle = '#4a3728';
+            else if (model.look.includes('black')) ctx.fillStyle = '#000';
+            else if (model.look.includes('red')) ctx.fillStyle = '#c41e3a';
+            else ctx.fillStyle = `hsl(${(seed * 2) % 360}, 60%, 50%)`;
+            
+            ctx.beginPath();
+            ctx.arc(0, -20, 85, Math.PI, 0);
+            ctx.fill();
+            
+            // Eyes
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(-30, -10, 15, 0, Math.PI * 2);
+            ctx.arc(30, -10, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = `hsl(${(seed * 3) % 360}, 80%, 40%)`;
+            ctx.beginPath();
+            ctx.arc(-30, -10, 8, 0, Math.PI * 2);
+            ctx.arc(30, -10, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Clothing based on role
+            if (model.role === 'marketing' || model.role === 'corporate') {
+                ctx.fillStyle = '#4169e1'; // Business blue
+            } else if (model.role === 'host') {
+                ctx.fillStyle = '#ff6b6b'; // Red carpet
+            } else {
+                ctx.fillStyle = `hsl(${(seed * 5) % 360}, 70%, 50%)`;
+            }
+            ctx.fillRect(-80, 80, 160, 120);
+            
+            ctx.restore();
+            
+            // Add model watermark
+            ctx.fillStyle = 'rgba(255,255,255,0.8)';
+            ctx.font = 'bold 16px Arial';
+            ctx.fillText(model.name, 20, 380);
+            ctx.font = '12px Arial';
+            ctx.fillText(model.id, 20, 395);
+        }
+
+        function generateGenericImage(ctx, type) {
+            const grad = ctx.createLinearGradient(0, 0, 400, 400);
+            grad.addColorStop(0, '#' + Math.floor(Math.random()*16777215).toString(16));
+            grad.addColorStop(1, '#' + Math.floor(Math.random()*16777215).toString(16));
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 400, 400);
+            
+            // Add noise/particles
+            for (let i = 0; i < 1000; i++) {
+                ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.1})`;
+                ctx.fillRect(Math.random() * 400, Math.random() * 400, 2, 2);
+            }
+        }
+
+        function updateModelUsage(modelId) {
+            let models = JSON.parse(localStorage.getItem('xavier_models') || '[]');
+            const model = models.find(m => m.id === modelId);
+            if (model) {
+                model.usageCount = (model.usageCount || 0) + 1;
+                localStorage.setItem('xavier_models', JSON.stringify(models));
+            }
+        }
+
+        function regenerate(type, oldId) {
+            const oldElement = document.getElementById(`gen-${oldId}`);
+            if (oldElement) oldElement.remove();
+            createGeneration(type, document.getElementById('gallery'));
+        }
+
+        function downloadImage(dataUrl) {
+            const a = document.createElement('a');
+            a.href = dataUrl;
+            a.download = `xavier-${activeModel ? activeModel.name : 'gen'}-${Date.now()}.png`;
+            a.click();
+        }
+
+        function loadGallery() {
+            const gallery = document.getElementById('gallery');
+            galleryItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'aspect-square rounded-lg relative overflow-hidden bg-gray-800 group';
+                div.innerHTML = `
+                    <img src="${item.data}" class="w-full h-full object-cover">
+                    <div class="absolute bottom-0 left-0 right-0 bg-black/70 p-2 text-xs">
+                        <div class="truncate text-white font-bold">${item.modelName ? item.modelName + ':' : ''} ${item.type.toUpperCase()}</div>
+                        <div class="text-gray-400 text-[10px]">${new Date(item.date).toLocaleDateString()}</div>
+                    </div>
+                    ${item.modelName ? '<div class="absolute top-2 left-2 bg-cyan-600/80 text-white text-[10px] px-2 py-1 rounded">Model</div>' : ''}
+                    <button onclick="this.parentElement.remove()" class="absolute top-2 right-2 w-6 h-6 bg-red-600 rounded-full text-white text-xs opacity-0 group-hover:opacity-100 transition flex items-center justify-center">✕</button>
+                `;
+                gallery.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>

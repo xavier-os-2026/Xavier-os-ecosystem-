@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous Agents | Xavier OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --void-black: #020204; }
+        body { font-family: 'Rajdhani', sans-serif; background: var(--void-black); color: #e0e0e0; }
+        .quantum-panel { background: rgba(10, 14, 39, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .log-entry { animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="quantum-panel sticky top-0 z-50 px-6 py-4 border-b border-red-500/20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="window.location.href='index.html'" class="text-gray-400 hover:text-white transition">← Back to Hub</button>
+                <h1 class="font-orbitron text-2xl font-bold text-red-400">AUTONOMOUS AGENTS</h1>
+            </div>
+            <div class="text-sm text-gray-400">Agent Status: <span id="agent-status" class="text-green-400 font-mono">Standby</span></div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <div class="grid lg:grid-cols-2 gap-8">
+            <div class="quantum-panel rounded-2xl p-6 border border-red-500/30 bg-red-900/5">
+                <h3 class="font-orbitron text-xl font-bold mb-4 text-red-400">Deploy Fiverr Agent</h3>
+                <div class="space-y-4">
+                    <input type="email" id="fiverr-email" placeholder="Fiverr Account Email" class="w-full bg-black/50 border border-red-500/30 rounded-lg p-3 text-white focus:border-red-500 focus:outline-none">
+                    <select id="agent-skill" class="w-full bg-black/50 border border-red-500/30 rounded-lg p-3 text-white focus:border-red-500 focus:outline-none">
+                        <option value="web">Web Development</option>
+                        <option value="design">Graphic Design</option>
+                        <option value="video">Video Editing</option>
+                        <option value="ai">AI Services</option>
+                        <option value="writing">Copywriting</option>
+                    </select>
+                    <input type="number" id="hourly-rate" placeholder="Min hourly rate ($)" value="50" class="w-full bg-black/50 border border-red-500/30 rounded-lg p-3 text-white focus:border-red-500 focus:outline-none">
+                    <button onclick="deployAgent()" id="deploy-btn" class="w-full bg-red-600 hover:bg-red-500 py-3 rounded-lg font-bold transition">🤖 DEPLOY AGENT</button>
+                </div>
+                <div class="mt-4 text-xs text-gray-400">
+                    <p class="mb-2">⚠️ Requirements:</p>
+                    <ul class="list-disc list-inside space-y-1 text-gray-500">
+                        <li>Valid Fiverr account</li>
+                        <li>Completed profile</li>
+                        <li>Payment method connected</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="quantum-panel rounded-2xl p-6">
+                <h3 class="font-orbitron text-xl font-bold mb-4 text-cyan-400">Agent Activity Log</h3>
+                <div id="agent-log" class="h-64 bg-black/60 rounded p-4 font-mono text-xs overflow-y-auto text-gray-400 space-y-1 border border-gray-800">
+                    <div class="text-gray-600">[System] Waiting for deployment...</div>
+                </div>
+                <div class="mt-4 flex justify-between text-xs text-gray-500">
+                    <span>Session Earnings: <span id="earnings" class="text-green-400">$0.00</span></span>
+                    <span>Proposals Sent: <span id="proposals" class="text-cyan-400">0</span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 quantum-panel rounded-2xl p-6">
+            <h3 class="font-orbitron text-xl font-bold mb-4 text-yellow-400">Active Agents</h3>
+            <div id="active-agents" class="space-y-3">
+                <div class="text-gray-500 text-center py-8">No active agents. Deploy one to begin.</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let isDeploying = false;
+        let earnings = 0;
+        let proposals = 0;
+        
+        function addLog(message, type = 'info') {
+            const log = document.getElementById('agent-log');
+            const colors = { info: 'text-gray-400', success: 'text-green-400', warning: 'text-yellow-400', error: 'text-red-400' };
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `<div class="log-entry ${colors[type]}">[${timestamp}] ${message}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function deployAgent() {
+            if (isDeploying) return;
+            
+            const email = document.getElementById('fiverr-email').value;
+            const skill = document.getElementById('agent-skill').value;
+            const rate = document.getElementById('hourly-rate').value;
+            
+            if (!email || !email.includes('@')) {
+                addLog('Invalid email address', 'error');
+                return;
+            }
+            
+            isDeploying = true;
+            document.getElementById('deploy-btn').textContent = 'DEPLOYING...';
+            document.getElementById('agent-status').textContent = 'Initializing';
+            document.getElementById('agent-status').className = 'text-yellow-400 font-mono';
+            
+            addLog(`Initializing agent for ${skill} services...`, 'info');
+            
+            const steps = [
+                { msg: 'Connecting to Fiverr API...', delay: 1000, type: 'info' },
+                { msg: 'Authenticating session...', delay: 2000, type: 'info' },
+                { msg: 'Scanning available projects...', delay: 3500, type: 'warning' },
+                { msg: `Found 12 ${skill} projects matching criteria`, delay: 5000, type: 'success' },
+                { msg: 'Generating personalized proposals...', delay: 6500, type: 'info' },
+                { msg: 'Submitting bids...', delay: 8000, type: 'info' }
+            ];
+            
+            steps.forEach(step => {
+                setTimeout(() => addLog(step.msg, step.type), step.delay);
+            });
+            
+            setTimeout(() => {
+                proposals += Math.floor(Math.random() * 5) + 3;
+                document.getElementById('proposals').textContent = proposals;
+                addLog('Deployment complete. Agent is now active.', 'success');
+                document.getElementById('agent-status').textContent = 'Active';
+                document.getElementById('agent-status').className = 'text-green-400 font-mono animate-pulse';
+                document.getElementById('deploy-btn').textContent = 'AGENT ACTIVE';
+                document.getElementById('deploy-btn').className = 'w-full bg-green-600 py-3 rounded-lg font-bold cursor-not-allowed';
+                
+                addActiveAgent(email, skill, rate);
+                startEarnings();
+                isDeploying = false;
+            }, 9000);
+        }
+        
+        function addActiveAgent(email, skill, rate) {
+            const container = document.getElementById('active-agents');
+            if (container.children[0]?.classList.contains('text-center')) {
+                container.innerHTML = '';
+            }
+            
+            const skills = { web: 'Web Dev', design: 'Design', video: 'Video', ai: 'AI Services', writing: 'Writing' };
+            const id = Math.random().toString(36).substr(2, 6).toUpperCase();
+            
+            container.innerHTML += `
+                <div class="flex justify-between items-center bg-black/40 p-4 rounded border border-red-500/20" id="agent-${id}">
+                    <div>
+                        <div class="font-bold text-white">Agent-${id}</div>
+                        <div class="text-xs text-gray-400">${skills[skill]} • $${rate}/hr • ${email}</div>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span class="text-xs text-green-400">● Online</span>
+                        <button onclick="terminateAgent('${id}')" class="text-xs bg-red-600/30 hover:bg-red-600/50 text-red-400 px-3 py-1 rounded border border-red-500">Terminate</button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function terminateAgent(id) {
+            if (confirm('Terminate this agent?')) {
+                document.getElementById(`agent-${id}`).remove();
+                addLog(`Agent ${id} terminated`, 'warning');
+            }
+        }
+        
+        function startEarnings() {
+            setInterval(() => {
+                if (Math.random() > 0.7) {
+                    const amount = (Math.random() * 100).toFixed(2);
+                    earnings += parseFloat(amount);
+                    document.getElementById('earnings').textContent = `$${earnings.toFixed(2)}`;
+                    addLog(`Project completed: +$${amount}`, 'success');
+                }
+            }, 15000);
+        }
+    </script>
+</body>
+</html>

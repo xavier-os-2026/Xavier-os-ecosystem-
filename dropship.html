@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Commerce | Xavier OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --void-black: #020204; }
+        body { font-family: 'Rajdhani', sans-serif; background: var(--void-black); color: #e0e0e0; }
+        .quantum-panel { background: rgba(10, 14, 39, 0.8); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .product-card { transition: all 0.3s ease; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0, 240, 255, 0.1); }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <header class="quantum-panel sticky top-0 z-50 px-6 py-4 border-b border-green-500/20">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <button onclick="window.location.href='index.html'" class="text-gray-400 hover:text-white transition">← Back to Hub</button>
+                <h1 class="font-orbitron text-2xl font-bold text-green-400">QUANTUM COMMERCE</h1>
+            </div>
+            <div class="text-sm text-gray-400">Connected Suppliers: <span class="text-green-400 font-mono">12,847</span></div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 py-8">
+        <div class="grid lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="quantum-panel rounded-2xl p-6">
+                    <h3 class="font-orbitron text-xl font-bold mb-4 text-green-400">Product Search</h3>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="search-input" class="flex-1 bg-black/50 border border-green-500/30 rounded-lg p-3 text-white focus:border-green-500 focus:outline-none" placeholder="Search millions of products..." onkeypress="if(event.key==='Enter')searchProducts()">
+                        <button onclick="searchProducts()" class="bg-green-600 hover:bg-green-500 px-6 py-3 rounded-lg font-bold transition">🔍 Search</button>
+                    </div>
+                    <div id="results" class="grid grid-cols-2 gap-4"></div>
+                </div>
+            </div>
+
+            <div class="space-y-6">
+                <div class="quantum-panel rounded-2xl p-6">
+                    <h3 class="font-orbitron text-lg font-bold mb-4 text-cyan-400">Autonomous Store</h3>
+                    <button onclick="generateStore()" id="store-btn" class="w-full bg-gradient-to-r from-green-600 to-cyan-600 py-4 rounded-lg font-bold hover:shadow-lg transition">🚀 Generate Store</button>
+                    <div class="mt-4 text-xs text-gray-500 space-y-1">
+                        <p>• AI selects winning products</p>
+                        <p>• Auto-generates descriptions</p>
+                        <p>• Configures payment gateways</p>
+                        <p>• Launches in 4 minutes</p>
+                    </div>
+                </div>
+
+                <div class="quantum-panel rounded-2xl p-6">
+                    <h3 class="font-orbitron text-lg font-bold mb-4 text-purple-400">Print-on-Demand</h3>
+                    <div class="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:border-purple-500 transition" onclick="document.getElementById('pod-upload').click()">
+                        <input type="file" id="pod-upload" class="hidden" accept="image/*" onchange="handlePOD(this)">
+                        <div class="text-2xl mb-2">🎨</div>
+                        <div class="text-sm text-gray-400">Click to upload design</div>
+                        <div class="text-xs text-gray-600 mt-2">Auto-syncs to Printful</div>
+                    </div>
+                </div>
+
+                <div class="quantum-panel rounded-2xl p-6">
+                    <h3 class="font-orbitron text-lg font-bold mb-4 text-yellow-400">Store Stats</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Products Listed</span>
+                            <span class="text-white" id="listed-count">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Today's Sales</span>
+                            <span class="text-green-400" id="today-sales">$0.00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">Auto-Orders</span>
+                            <span class="text-cyan-400" id="auto-orders">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const products = [
+            { name: 'Quantum Headset X1', price: 12.40, margin: 340, supplier: 'AliExpress', category: 'Electronics' },
+            { name: 'Neural Link Cable', price: 8.50, margin: 280, supplier: 'CJ Dropshipping', category: 'Electronics' },
+            { name: 'Hologram Projector', price: 45.00, margin: 220, supplier: 'Spocket', category: 'Gadgets' },
+            { name: 'Cyber Deck Keyboard', price: 34.99, margin: 190, supplier: 'AliExpress', category: 'Electronics' },
+            { name: 'LED Matrix Glasses', price: 15.20, margin: 410, supplier: 'CJ Dropshipping', category: 'Fashion' },
+            { name: 'Smart Ring Pro', price: 22.00, margin: 300, supplier: 'Spocket', category: 'Wearables' }
+        ];
+        
+        let listed = 0;
+        let sales = 0;
+        
+        function searchProducts() {
+            const query = document.getElementById('search-input').value.toLowerCase();
+            const results = document.getElementById('results');
+            const filtered = query ? products.filter(p => p.name.toLowerCase().includes(query) || p.category.toLowerCase().includes(query)) : products;
+            
+            results.innerHTML = filtered.map((p, idx) => `
+                <div class="product-card bg-black/40 p-4 rounded-lg border border-green-500/20 hover:border-green-500/50 cursor-pointer">
+                    <div class="h-32 bg-gradient-to-br from-gray-800 to-gray-900 rounded mb-3 flex items-center justify-center text-4xl">📦</div>
+                    <div class="font-bold text-white text-sm mb-1">${p.name}</div>
+                    <div class="text-xs text-gray-400 mb-2">${p.category}</div>
+                    <div class="flex justify-between items-center mb-3">
+                        <span class="text-green-400 font-bold">$${p.price}</span>
+                        <span class="text-xs text-cyan-400">${p.margin}% margin</span>
+                    </div>
+                    <div class="text-xs text-gray-500 mb-3">${p.supplier}</div>
+                    <button onclick="importProduct(${idx})" class="w-full bg-green-600/30 border border-green-500 text-green-400 py-2 rounded text-sm hover:bg-green-600/50 transition">Import to Store</button>
+                </div>
+            `).join('');
+        }
+        
+        function importProduct(idx) {
+            listed++;
+            document.getElementById('listed-count').textContent = listed;
+            const btn = event.target;
+            btn.textContent = '✓ Imported';
+            btn.classList.remove('bg-green-600/30', 'text-green-400');
+            btn.classList.add('bg-gray-700', 'text-gray-400');
+            btn.disabled = true;
+            
+            // Simulate sale
+            setTimeout(() => {
+                const amount = products[idx].price * 3;
+                sales += amount;
+                document.getElementById('today-sales').textContent = '$' + sales.toFixed(2);
+                document.getElementById('auto-orders').textContent = Math.floor(listed * 0.3);
+            }, 5000);
+        }
+        
+        function generateStore() {
+            const btn = document.getElementById('store-btn');
+            btn.textContent = 'Initializing...';
+            btn.disabled = true;
+            
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 20;
+                btn.textContent = `Building store... ${progress}%`;
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    btn.textContent = '✓ Store Live';
+                    btn.classList.remove('from-green-600', 'to-cyan-600');
+                    btn.classList.add('bg-green-600');
+                    listed += 5;
+                    document.getElementById('listed-count').textContent = listed;
+                    alert('🏪 Store generated!\n\nURL: https://xavier-store.myshopify.com\nPassword: quantum2025');
+                }
+            }, 800);
+        }
+        
+        function handlePOD(input) {
+            if (input.files && input.files[0]) {
+                alert('🎨 Design uploaded to Printful\n\nProducts generated:\n• T-Shirt ($24.99)\n• Hoodie ($44.99)\n• Phone Case ($19.99)');
+            }
+        }
+        
+        window.addEventListener('DOMContentLoaded', searchProducts);
+    </script>
+</body>
+</html>
